@@ -21,6 +21,7 @@ def build_panel(v, start, end):
     v = v[(v["finished_at"] > t0) & (v["started_at"] < t1)]
     regions = sorted(v["region"].unique())
     arr = {k: np.zeros((len(hours), len(regions)), bool) for k in ("y", "now", "bad")}
+    bad_end = np.full((len(hours), len(regions)), np.nan)
     for j, r in enumerate(regions):
         g = v[v["region"] == r]
         for s, f, h in zip(g["started_at"], g["finished_at"], g["hours"]):
@@ -30,7 +31,10 @@ def build_panel(v, start, end):
             arr["now"][hours.searchsorted(s):hours.searchsorted(f), j] = True
             if h > LONG_H:
                 arr["bad"][i0:i1, j] = True
-    return {k: pd.DataFrame(a, index=hours, columns=regions) for k, a in arr.items()}
+                bad_end[i0:i1, j] = f.value
+    out = {k: pd.DataFrame(a, index=hours, columns=regions) for k, a in arr.items()}
+    out["bad_end"] = pd.DataFrame(bad_end, index=hours, columns=regions)
+    return out
 
 
 def make_long(panel):
