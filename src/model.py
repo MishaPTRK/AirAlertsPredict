@@ -16,15 +16,14 @@ def split_week(df, ws, train_weeks=26):
     te = df[(df["time"] >= ws) & (df["time"] < ws + pd.Timedelta(days=7))]
     return tr, te[~te["bad"]]
 
-
-def walk_forward(df, test_start, test_end, train_weeks=26, idle_only=True):
+def walk_forward(df, test_start, test_end, train_weeks=26, idle_only=True, features=FEATURES):
     if idle_only:
         df = df[df["now"] == 0]
     parts = []
     for ws in pd.date_range(test_start, test_end, freq="7D", inclusive="left"):
         tr, te = split_week(df, ws, train_weeks)
-        model = LGBMClassifier(**PARAMS).fit(tr[FEATURES], tr["y"])
+        model = LGBMClassifier(**PARAMS).fit(tr[features], tr["y"])
         te = te.copy()
-        te["p"] = model.predict_proba(te[FEATURES])[:, 1]
+        te["p"] = model.predict_proba(te[features])[:, 1]
         parts.append(te)
     return pd.concat(parts)
